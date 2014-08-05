@@ -1,0 +1,93 @@
+<?php
+require "PDODatabaseConnection-AbstractSuperclass.php";
+/*
+**************************
+CLASS MySQL_PDODatabaseConnection
+Version 1.5, build: 8/4/14
+Created by Craig Bartle
+**************************	
+	Dependency: PDODatabaseConnection-AbstractSuperclass
+	Children: None
+	
+	PURPOSE: An object of this class fulfills the connect() method of abstract class PDODatabaseConnection-AbstractSuperclass
+	CONSTRUCTION: (1) $host => database host name (i.e. "localhost")
+				  (2) $db_name => database name (i.e. "sample_schedule_db")
+				  (3) $db_username => database username (i.e. "root")
+				  (4) $db_password => database password (i.e. "")
+	USAGE: see superclass PDODatabaseConnection-AbstractSuperclass
+*/
+class MySQL_PDODatabaseConnection extends PDODatabaseConnection-AbstractSuperclass
+{
+	protected $_dbh;
+	private $_host;
+	private $_db_name;
+	private $_db_username;
+	private $_db_password;
+	
+public function info(){
+$l1="<tr><td><span style='font-weight:bold;'>";
+$l2="</span></td><td>";
+$l3="</td></tr>";
+print <<< EOL
+<pre>
+<span style='font-size:x-large;font-weight:bold;'>Class: MySQL_PDODatabaseConnection</span>
+Created by Craig Bartle
+
+An instance of this object can perform functions associated with querying a MySQL database using PDO (PHP Data Object)
+
+Dependency: PDODatabaseConnection-AbstractSuperclass
+Children: None
+
+<span style='font-size:x-large;font-weight:bold;'>Function List</span>
+<table border=1>
+magic methods
+$l1 __construct(\$host, \$db_name, \$db_username, \$db_password) $l2 Constructor, requires 'database host name' 'database name' 'database username' and 'database password' $l3
+$l1 __destruct() $l2 Destructor, calls disconnect() method of superclass $l3
+</table>
+
+<table border=1>
+$l1 getArray(\$sql) $l2 Inherited, executes a SQL statement and return an associative array of results $l3
+$l1 getObject(\$class, \$sql) $l2 Inherited, executes a SQL statement and return an object with results $l3
+</table>
+
+</pre>
+EOL;
+	}
+	
+	//Constructor
+	//PRECONDITIONS: None 
+	//POST-CONDITIONS: None
+	//RETURN: None
+	public function __construct($host, $db_name, $db_username, $db_password){
+	$this->_host=$host;
+	$this->_db_name=$db_name;
+	$this->_db_username=$db_username;
+	$this->_db_password=$db_password;
+	}
+	
+	//Destructor
+	//PRECONDITIONS: None 
+	//POST-CONDITIONS: Calls the disconnect() method of PDODatabaseConnection-AbstractSuperclass to ensure the connection is closed
+	//RETURN: None
+	public function __destruct(){
+	$this->disconnect();
+	}
+	
+	//Connect
+	//PRECONDITIONS: None 
+	//POST-CONDITIONS: A database handle, $this->_dbh, is created as a new PDO object 
+	//RETURN: None
+	protected function connect(){
+	try
+		{
+			$this->_dbh = new PDO('mysql:host='.$this->_host.';dbname='.$this->_db_name.';charset=utf8', $this->_db_username, $this->_db_password);
+			$this->_dbh->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+		}
+	catch(PDOException $e)
+		{
+			print "<br/>Error: " . $e->getMessage() . PHP_EOL;
+			die();
+		}
+	}
+}
+?>
