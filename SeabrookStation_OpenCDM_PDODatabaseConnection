@@ -1,0 +1,144 @@
+<?php
+require "Oracle_PDODatabaseConnection.php";
+/*
+**************************
+CLASS SeabrookStation_OpenCDM_PDODatabaseConnection
+Version 1.5, build: 8/4/14
+Created by Craig Bartle
+**************************
+	Dependency: Oracle_PDODatabaseConnection()
+	Children: None
+	
+	PURPOSE: An object of this class executes queries against Seabrook Station's OpenCDM database
+	CONSTRUCTION: All parameters for construction are internal to the class
+	USAGE: use info() for function listing and description
+*/
+class SeabrookStation_OpenCDM_PDODatabaseConnection extends Oracle_PDODatabaseConnection
+{
+	private $_OpenCDM;
+	
+public function info(){
+$l1="<tr><td><span style='font-weight:bold;'>";
+$l2="</span></td><td>";
+$l3="</td></tr>";
+print <<< EOL
+<pre>
+<span style='font-size:x-large;font-weight:bold;'>Class: SeabrookStation_OpenCDM_PDODatabaseConnection</span>
+Created by Craig Bartle
+
+An instance of this object can perform functions associated with querying Seabrook Station's OpenCDM database using PDO (PHP Data Object)
+
+Dependency: Oracle_PDODatabaseConnection()
+Children: None
+
+<span style='font-size:x-large;font-weight:bold;'>Function List</span>
+<table border=1>
+magic methods
+$l1 __construct() $l2 Constructor, instantiates a new Oracle_PDODatabaseConnection with the OpenCDM parameters $l3
+</table>
+
+<table border=1>
+$l1 getLatestDatapoint(\$samplepoint, \$analysis, \$listMethod) $l2 Returns the latest data as an array for the samplepoint, analysis pair $l3
+$l1 getRangeOfDatapoints(\$samplepoint, \$parameter, \$startDate, \$endDate) $l2 Returns an array of arrays of datapoints that fall in the specified time range $l3
+$l1 getListOfSamplepoints() $l2 Returns an array of all samplepoints $l3
+$l1 getListOfSampletimes(\$samplepoint) $l2 Returns an array of all sampletimes for the requested samplepoint $l3
+$l1 getLatestNumericData(\$samplepoint, \$analysis, \$listMethod, \$rownum) $l2 Returns the latest numeric (i.e. NOT "nis" or "oos") data for the samplepoint. Uses a private function. $l3
+</table>
+
+</pre>
+EOL;
+	}
+}
+	
+	//Constructor
+	//PRECONDITIONS: TNSNames.ora has alias ocdm.world listed. The username and password is "cdm"
+	//POST-CONDITIONS: A new instance of OracleDatabaseConnection is created with the OpenCDM parameters, $this->_OpenCDM
+	//RETURN: None
+	public function __construct(){
+	$this->_OpenCDM=new OracleDatabaseConnection('ocdm.world', 'cdm', 'cdm');
+	}
+
+	//Returns the latest data for the samplepoint, analysis pair
+	//PRECONDITIONS: $listMethod is known. Typically, "DESC" should work, but in some cases we need "ASC"
+	//POSTCONDITIONS: None
+	//RETURN: An array of information relating to the query
+	public function getLatestDatapoint($samplepoint, $analysis, $listMethod){
+	$sql_getLatestDatapoint = "SELECT sdd_results.value, sdd_sample.samplepoint, sdd_results.measure_units, ".
+		"TO_CHAR((sdd_sample.sampledate), 'MM/DD/YYYY HH24:MI:SS') as sampletime, sdd_results.analysis, sdd_results.sample_modifier ".
+		"FROM sdd_sample, sdd_results ".
+		"WHERE(sdd_results.sampleid=sdd_sample.sampleid and sdd_sample.samplepoint='$samplepoint' ". 
+		"and sdd_results.analysis='$analysis' and rownum<=1) ".
+		"ORDER BY sdd_sample.sampledate $listMethod";
+	return $this->_OpenCDM->getArray($sql_getLatestDatapoint);
+	}
+
+	//Private function not callable outside the class, need to determine data in a specific row of the database
+	//PRECONDITIONS: $listMethod is known. Typically, "DESC" should work, but in some cases we need "ASC"
+	//POSTCONDITIONS: None
+	//RETURN: An array of information relating to the query	
+	private function getDatapointByRow($samplepoint, $analysis, $listMethod, $rownum){
+	$sql_getDatapointByRow = "SELECT * FROM (SELECT wholequery.*, rownum rnum FROM( ".
+		"SELECT sdd_results.value, sdd_sample.samplepoint, sdd_results.measure_units, ".
+		"TO_CHAR((sdd_sample.sampledate), 'MM/DD/YYYY HH24:MI:SS') as sampletime, sdd_results.analysis, sdd_results.sample_modifier ".
+		"FROM sdd_results, sdd_sample ".
+		"WHERE(sdd_results.sampleid=sdd_sample.sampleid and sdd_sample.samplepoint='$samplepoint' ". 
+		"AND sdd_results.analysis='$analysis') ".
+		"ORDER BY sdd_sample.sampledate $listMethod ) wholequery ".
+		"WHERE rownum <= $rownum) ".
+		"WHERE rnum >= $rownum"; 
+	return $this->_OpenCDM->getArray($sql_getDatapointByRow);
+	}
+	
+	//Returns an array of arrays of datapoints that fall in the specified time range
+	//PRECONDITIONS: None
+	//POSTCONDITIONS: None
+	//RETURN: An array of arrays of information relating to the query
+	public function getRangeOfDatapoints($samplepoint, $parameter, $startDate, $endDate){
+	$sql_getRangeOfDatapoints = "SELECT sdd_results.value, sdd_results.measure_units, sdd_sample.sampledate ". 
+       "FROM sdd_results, sdd_sample ".
+       "WHERE (sdd_results.sampleid=sdd_sample.sampleid ".
+ 	   "AND sdd_sample.samplepoint='$samplepoint' and sdd_results.analysis='$parameter' ".
+   	   "AND sdd_sample.sampledate>='$startDate' and TO_CHAR((sdd_sample.sampledate), 'MM/DD/YYYY HH24:MI:SS')<='$endDate')";
+	return $this->_OpenCDM->getArray($sql_getRangeOfDatapoints);
+	}
+	
+	//Returns an array of all samplepoints
+	//PRECONDITIONS: None
+	//POSTCONDITIONS: None
+	//RETURN: An array of information relating to the query
+	public function getListOfSamplepoints(){
+	$sql_getListOfSamplepoints = "SELECT DISTINCT SDL_SamplePoint.samplepoint, SDL_SamplePoint.description ". 
+		"FROM SDL_SamplePoint ".
+		"ORDER BY SDL_SamplePoint.SAMPLEPOINT";
+	return $this->_OpenCDM->getArray($sql_getListOfSamplepoints);
+	}
+	
+	//Returns an array of all sampletimes for the requested samplepoint
+	//PRECONDITIONS: None
+	//POSTCONDITIONS: None
+	//RETURN: An array of information relating to the query
+	public function getListOfSampletimes($samplepoint){
+	$sql_getListOfSampletimes = "SELECT DISTINCT to_char(sampledate, 'MM/DD/YYYY HH24:MI:SS') ".
+        "FROM(select sdd_sample.sampledate, sdd_sample.samplepoint, TO_CHAR((sdd_sample.sampledate), 'MM/DD/YYYY HH24:MI:SS') ". 
+		"FROM sdd_sample, sdd_results ".
+		"WHERE(sdd_results.sampleid=sdd_sample.sampleid ".
+		"AND sdd_sample.samplepoint='$samplepoint')) ".
+		"ORDER BY to_date(to_char(sampledate, 'MM/DD/YYYY HH24:MI:SS'), 'MM/DD/YYYY HH24:MI:SS') DESC";
+	return $this->_OpenCDM->getArray($sql_getListOfSampletimes);	
+	}
+	
+	//Returns the latest numeric (i.e. NOT "nis" or "oos") data for the samplepoint
+	//PRECONDITIONS: $listMethod is known. Typically, "DESC" should work, but in some cases we need "ASC". $rownum should start at 1.
+	//POSTCONDITIONS: None
+	//RETURN: An array of information relating to the query
+	public function getLatestNumericData($samplepoint, $analysis, $listMethod, $rownum){	
+	$data = $this->getDatapointByRow($samplepoint, $analysis, $listMethod, $rownum);
+	if(!is_numeric($data[0]['VALUE']))
+		{
+			$rownum++;
+			$data = $this->getLatestNumericData($samplepoint, $analysis, $listMethod, $rownum);
+		}
+	return $data;
+	}
+}
+?>
