@@ -1,0 +1,81 @@
+<?php
+/*
+**************************
+ABSTRACT CLASS PDODatabaseConnection-AbstractSuperclass
+Version 1.5, build: 8/4/14
+Created by Craig Bartle
+**************************	
+	Dependency: None
+	Children: MySQL_PDODatabaseConnection, Oracle_PDODatabaseConnection
+	
+	PURPOSE: This abstract class allows for common PDO functionality provided the extending class fulfills the connect() method.
+	CONSTRUCTION: None, abstract classes cannot be instantiated
+	USAGE: (1) getArray($sql) returns an array of database rows fetched by the $sql statement
+	       (2) getObject($class, $sql) returns objects of class $class fetched by the $sql statement
+*/
+abstract class PDODatabaseConnection-AbstractSuperclass
+{
+	//Connects to the database and creates database handle, $this->_dbh
+	//PRECONDITIONS: None
+	//POST-CONDITIONS: A database handle, $this->_dbh, is created
+	//RETURN: None
+	abstract protected function connect();
+
+	//Closes the PDO connection
+	//PRECONDITIONS: None
+	//POST-CONDITIONS: The session is properly closed
+	//RETURN: None
+	protected function disconnect(){
+	$this->_dbh=null;
+	}
+
+	//Execute a SQL statement and return an associative array of results
+	//PRECONDITIONS: $sql is a valid SQL statement string
+	//POST-CONDITIONS: None
+	//RETURN: $array_to_return => an associative array of database table rows retrieved using the SQL statement
+	public function getArray($sql){
+	$this->connect();
+	$array_to_return = Array();
+	try
+		{
+			$query = $this->_dbh->prepare($sql);
+			$query->execute();
+		}
+	catch(PDOException $e)
+		{
+			print "Error: " . $e->getMessage() . "";
+			die();
+		}
+	while($result = $query->fetch(PDO::FETCH_ASSOC))
+		{
+			array_push($array_to_return, $result);
+		}
+	$this->disconnect();
+	return $array_to_return;
+	}
+	
+	//Execute a SQL statement and return an object with results
+	//PRECONDITIONS: $class is a valid class type that can be set by the results from the $sql statement
+	//POST-CONDITIONS: None
+	//RETURN: Objects created from the query
+	public function getObject($class, $sql){
+	$this->connect();
+	try
+		{
+			$query = $this->_dbh->prepare($sql);
+			$query->setFetchMode(PDO::FETCH_CLASS,$class);
+			$query->execute();
+		}
+	catch(PDOException $e)
+		{
+			print "Error: " . $e->getMessage() . "";
+			die();
+		}
+	while($result = $query->fetch())
+		{
+			//echo '<pre>',print_r($result),'</pre>';
+			return $result;
+		}
+	$this->disconnect();
+	}	
+}
