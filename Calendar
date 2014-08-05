@@ -1,0 +1,295 @@
+<?php
+/*
+**************************
+CLASS Calendar
+Version 1.5, build: 7/31/14
+Created by Craig Bartle
+**************************
+	Dependency: None
+	Children: RepetitiveTask_Calendar
+	
+	PURPOSE: An object of this class can perform basic calendar functions
+	CONSTRUCTION: (1) $year => the year for which the calendar will be generated
+	USAGE: No actual calendar is created, but any of the public methods will provide information about the 
+		   days in the year provided in the constructor. Use info() for function list.
+*/
+class Calendar
+{
+	private $_dateTime_Object;
+	
+//List functions of this object in an HTML table
+//PRECONDITIONS: None
+//POST-CONDITIONS: None
+//RETURN: None
+public function info(){
+$l1="<tr><td><span style='font-weight:bold;'>";
+$l2="</span></td><td>";
+$l3="</td></tr>";
+print <<< EOL
+<pre>
+<span style='font-size:x-large;font-weight:bold;'>Class: Calendar</span>
+Created by Craig Bartle
+
+An instance of this object can perform functions associated with manipulating date and time values. It is based on the PHP DateTime() object.
+
+Dependency: None
+Children: RepetitiveTaskCalendar();
+
+<span style='font-size:x-large;font-weight:bold;'>Function List</span>
+<table border=1>
+magic methods
+$l1 __construct(\$year) $l2 Constructor, Calendar of specified year $l3
+$l1 __destruct() $l2 Destructor $l3
+</table>
+
+<table border=1>
+$l1 getFirstOfYear() $l2 Returns DateTime() for January 1st $l3
+$l1 getLastOfYear() $l2 Returns DateTime() for December 31st $l3
+$l1 getDay(\$month, \$day) $l2 Returns DateTime() for specified month and day $l3
+$l1 getFirstOfWeek(\$month, \$day) $l2 Returns DateTime() for the Sunday of the week containing specified month and day $l3
+$l1 getFirstOfMonth(\$month) $l2 Returns DateTime() for the first day of the specifed month $l3
+$l1 getFirstOfQuarter(\$quarter_number) $l2 Returns DateTime() for the first day of the specifed quarter (1, 2, 3, or 4) $l3
+$l1 getFirstOfSemiAnnual(\$half) $l2 Returns DateTime() for the first day of the semi-annual half (1 or 2) specified $l3
+$l1 getWeekAsArray(\$month, \$day) $l2 Returns an Array() of DateTime() for the week containing the specifed day $l3
+$l1 getSundayOfWeekOfMonth(\$week_number, \$month) $l2 Returns DateTime() for a specific full week of the specifed month $l3
+$l1 doesWeekByNumberContainDay(\$week_number, \$month, \$day) $l2 Returns boolean value if the specifed day is in the specified full week number of the specifed month $l3
+$l1 getWeekNumberOfMonth(\$month, \$day) $l2 Returns integer value of the full week number of the month in which the month / day pair exist. Will return the week number of the previous month if the full week exists there $l3 
+$l1 getWeekNumberOfYear(\$month, \$day) $l2 Returns integer value of the full week number of the year in which the month / day pair exists. Will return the week number of the previous year if the full week exists there $l3
+</table>
+
+</pre>
+EOL;
+	}
+	
+	//Constructor
+	//PRECONDITIONS: None
+	//POST-CONDITIONS: $this->_dateTime_Object is instantiated as 'January 1, $year'
+	//RETURN: None
+	public function __construct($year){
+	$this->_dateTime_Object=new DateTime();
+	$this->_dateTime_Object->setDate($year, 1, 1);
+	}
+	
+	//Destructor
+	//PRECONDITIONS: An instance of this object is no longer accessible
+	//POST-CONDITIONS: The object is destroyed
+	//RETURN: None
+	public function __destruct(){
+	}
+	
+	//The first day of the year
+	//PRECONDITIONS: None
+	//POST-CONDITIONS: None
+	//RETURN: PHP DateTime() object for the first day of January
+	public function getFirstOfYear(){
+	return clone $this->_dateTime_Object;
+	}
+	
+	//The last day of the year
+	//PRECONDITIONS: None
+	//POST-CONDITIONS: None
+	//RETURN: PHP DateTime() object for the last day of December
+	public function getLastOfYear(){
+	$dateTime_to_return = clone $this->_dateTime_Object;
+	$dateTime_to_return->setDate($dateTime_to_return->format('Y'), 12, 31);
+	return $dateTime_to_return;
+	}
+	
+	//A specific day of the year
+	//PRECONDITIONS: None
+	//POST-CONDITIONS: None
+	//RETURN: PHP DateTime() object for the day specified by $month and $day
+	public function getDay($month, $day){
+	$dateTime_to_return = clone $this->_dateTime_Object;
+	$dateTime_to_return->setDate($dateTime_to_return->format('Y'), $month, $day);
+	return $dateTime_to_return;
+	}
+	
+	//The first day of the week
+	//PRECONDITIONS: None
+	//POST-CONDITIONS: None
+	//RETURN: PHP DateTime() object for the first day of the week containing the $month, $day pair
+	public function getFirstOfWeek($month, $day){
+	$dateTime_to_return = clone $this->_dateTime_Object;
+	$dateTime_to_return->setDate($dateTime_to_return->format('Y'), $month, $day);
+	$days_from_Sunday = $dateTime_to_return->format('w');
+	$dateTime_interval_to_Sunday_argument = 'P'.$days_from_Sunday.'D';
+	$dateTime_interval_to_Sunday = new DateInterval($dateTime_interval_to_Sunday_argument);
+	$dateTime_interval_to_Sunday->invert=1;
+	$dateTime_to_return->add($dateTime_interval_to_Sunday);
+	return $dateTime_to_return;
+	}
+
+	//The first day of the month
+	//PRECONDITIONS: None
+	//POST-CONDITIONS: None
+	//RETURN: PHP DateTime() object for the first day of the month specified	
+	public function getFirstOfMonth($month){
+	$dateTime_to_return = clone $this->_dateTime_Object;
+	$dateTime_to_return->setDate($dateTime_to_return->format('Y'), $month, 1);
+	return $dateTime_to_return;	
+	}
+	
+	//The first day of the quarter
+	//PRECONDITIONS: None
+	//POST-CONDITIONS: None
+	//RETURN: PHP DateTime() object for the first day of the quarter specified
+	public function getFirstOfQuarter($quarter_number){
+	$dateTime_to_return = clone $this->_dateTime_Object;
+	$dateTime_to_return->setDate($dateTime_to_return->format('Y'), ($quarter_number-1)*3+1, 1);
+	return $dateTime_to_return;	
+	}
+	
+	//The first day of the half of the year
+	//PRECONDITIONS: None
+	//POST-CONDITIONS: None
+	//RETURN: PHP DateTime() object for the first day of the half of the year specified by $half
+	public function getFirstOfSemiAnnual($half){
+	if($half == 1)
+		{
+			$dateTime_to_return = clone $this->_dateTime_Object;
+		}
+	elseif($half == 2)
+		{
+			$dateTime_to_return = $this->getDay(6,1);
+		}
+	return $dateTime_to_return;
+	}
+	
+	//An array containing 7 DateTime() objects defining a week
+	//PRECONDITIONS: None
+	//POST-CONDITIONS: None
+	//RETURN: Array of PHP DateTime() objects for Sunday through Monday of the week containing the $month, $day pair
+	public function getWeekAsArray($month, $day){
+	$dayIterator = new DateInterval('P1D');
+	$Sunday = $this->getFirstOfWeek($month, $day);
+	$Monday = clone $Sunday;
+	$Monday->add($dayIterator);
+	$Tuesday = clone $Monday;
+	$Tuesday->add($dayIterator);
+	$Wednesday = clone $Tuesday;
+	$Wednesday->add($dayIterator);
+	$Thursday = clone $Wednesday;
+	$Thursday->add($dayIterator);
+	$Friday = clone $Thursday;
+	$Friday->add($dayIterator);
+	$Saturday = clone $Friday;
+	$Saturday->add($dayIterator);
+	$week[0] = $Sunday;
+	$week[1] = $Monday;
+	$week[2] = $Tuesday;
+	$week[3] = $Wednesday;
+	$week[4] = $Thursday;
+	$week[5] = $Friday;
+	$week[6] = $Saturday;
+	return $week;
+	}
+	
+	//The first day of the week by week number
+	//PRECONDITIONS: None
+	//POST-CONDITIONS: None
+	//RETURN: PHP DateTime() object for the first day of the week specifed by $week_number and $month
+	public function getSundayOfWeekOfMonth($week_number, $month){
+	$first_day_of_month = $this->getFirstOfMonth($month);
+	if($first_day_of_month->format('l') != "Sunday")
+		{
+		$dateTime_interval_argument = 7*($week_number);
+		}
+	else
+		{
+		$dateTime_interval_argument = 7*($week_number-1);
+		}
+	$dateTime_interval_argument = 'P'.$dateTime_interval_argument.'D';
+	$dateTime_interval = new DateInterval($dateTime_interval_argument);
+	$first_day_of_month->add($dateTime_interval);
+	return $this->getFirstOfWeek($month, $first_day_of_month->format('d'));
+	}
+
+	//Given a week number, does it contain a given day?
+	//PRECONDITIONS: None
+	//POST-CONDITIONS: None
+	//RETURN: Boolean if the given $week_number of $month contains the day number, $day	
+	public function doesWeekByNumberContainDay($week_number, $month, $day){
+	$does_it = false;
+	$Sunday = $this->getSundayOfWeekOfMonth($week_number, $month);
+	$week = $this->getWeekAsArray($month, $Sunday->format('d'));
+	foreach($week as &$weekday)
+		{
+		if($weekday->format('d') == $day)
+			{
+				$does_it = true;
+			}
+		}
+	return $does_it;
+	}
+	
+	//What is the number of full weeks in this month until this day?
+	//PRECONDITIONS: None
+	//POST-CONDITIONS: None
+	//RETURN: Integer of number of weeks until this $day, $month pair
+	public function getWeekNumberOfMonth($month, $day){
+	$given_week = $this->getFirstOfWeek($month, $day);
+	$week_iterator = new DateInterval('P7D');
+	$iterative_week = $this->getSundayOfWeekOfMonth(1,$month);
+	if($given_week->format('m') < $month)
+		{
+			$month = $month-1;
+			$iterative_week = $this->getSundayOfWeekOfMonth(1,$month);
+		}
+	elseif($given_week->format('m') == 12 & $month == 1)
+		{
+			$month = 12;
+			$current_year = clone $this->_dateTime_Object;
+			$current_year = $current_year->format('Y');
+			$last_year_calendar = new Calendar($current_year-1);
+			$iterative_week = $last_year_calendar->getSundayOfWeekOfMonth(1,12);
+		}
+	$week_number=1;
+	while($iterative_week->format('m') == $month)
+		{
+		if($iterative_week->format('m/d/Y') == $given_week->format('m/d/Y'))
+			{
+				return $week_number;
+			}
+		else
+			{
+				$week_number = $week_number+1;
+				$iterative_week->add($week_iterator);
+			}
+		}
+	return "Error in Calendar -> getWeekNumberOfMonth";
+	}
+	
+	//What is the number of full weeks in this year until this day?
+	//PRECONDITIONS: None
+	//POST-CONDITIONS: None
+	//RETURN: Integer of number of weeks until this $day, $month pair
+	public function getWeekNumberOfYear($month, $day){
+	$current_year = clone $this->_dateTime_Object;
+	$current_year = $current_year->format('Y');
+	$given_week = $this->getFirstOfWeek($month, $day);
+	$iterative_week = $this->getSundayOfWeekOfMonth(1,1);
+	if($given_week->format('Y') < $current_year)
+		{
+			$current_year = $current_year-1;
+			$last_year_calendar = new Calendar($current_year);
+			$iterative_week = $last_year_calendar->getSundayOfWeekOfMonth(1,1);
+		}
+	$week_number=1;
+	$week_iterator = new DateInterval('P7D');
+	while($iterative_week->format('Y') == $current_year)
+		{
+		if($iterative_week->format('m/d/Y') == $given_week->format('m/d/Y'))
+			{
+				return $week_number;
+			}
+		else
+			{
+				$week_number = $week_number+1;
+				$iterative_week->add($week_iterator);
+			}
+		}
+	return "full week starts in previous year";
+	}
+}
+?>
